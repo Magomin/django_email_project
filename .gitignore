@@ -1,0 +1,20 @@
+# Python files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment
+env/
+.env
+*.env
+
+# System files
+.DS_Store
+
+# Docker files
+.dockerignore
+docker-compose.yml
+dockerfile
+
+# Requirements
+requirements-linkedin.txt

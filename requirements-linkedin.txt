@@ -1,4 +1,0 @@
-selenium
-selenium-stealth
-beautifulsoup4
-pyautogui
