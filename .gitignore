@@ -18,9 +18,7 @@ linkedin_enriched_leads.py
 .DS_Store
 
 # Docker files
-.dockerignore
-docker-compose.yml
-dockerfile
+
 
 # Requirements
 requirements-linkedin.txt

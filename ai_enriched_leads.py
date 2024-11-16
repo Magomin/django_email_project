@@ -5,7 +5,7 @@ import json
 import os
 import subprocess
 from django.core.management.base import BaseCommand
-from ...airtable_config import AIRTABLE_API_KEY, BASE_ID
+from .django_email_tracking.tracker.airtable_config import AIRTABLE_API_KEY, BASE_ID
 from pyairtable import Api
 
 LINKEDIN_ENRICHED_LEADS_TABLE_NAME = "linkedin_Enriched_Leads_sheet"
