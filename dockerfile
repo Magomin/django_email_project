@@ -27,4 +27,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Expose the port that the Django app runs on
 EXPOSE 8000
 
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["python", "django_email_project/manage.py", "runserver", "0.0.0.0:8000"]
