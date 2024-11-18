@@ -12,7 +12,7 @@ services:
 
   email_sender:
     build: .
-    command: python manage.py send_email
+    command: python manage.py send_emails
     volumes: 
       - .:/app
     environment:
