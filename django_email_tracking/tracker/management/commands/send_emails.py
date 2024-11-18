@@ -29,11 +29,13 @@ def generate_tracking_urls(email_number, recipient_email):
     tracking_pixel_url = f"{BASE_URL}/tracker/track_open/?email_id={encoded_email}&email_column={encoded_column}"
     click_tracking_url = f"{BASE_URL}/tracker/track_click/?email_id={encoded_email}&email_column={encoded_column}&destination={quote('https://fribl.co')}"
     
+    print(f"Generated tracking pixel URL: {tracking_pixel_url}")
+    print(f"Generated click tracking URL: {click_tracking_url}")
+    
     return tracking_pixel_url, click_tracking_url
 
 def send_email_with_tracking(email_number, record):
     try:
-        
         recipient_email = record['fields'].get('Validated Work Email')
         subject = record['fields'].get(f'Subject {email_number}', f"Your Subject for Email {email_number}")
         email_content = record['fields'].get(f'Email {email_number}')
@@ -57,11 +59,14 @@ def send_email_with_tracking(email_number, record):
           <body>
             <p>{email_content}</p>
             <p><a href="{click_tracking_url}">View more details at fribl.co</a></p>
-             <img src="{tracking_pixel_url}" alt="Fribl Logo" width="200" height="200" style="max-width:100%; height:auto;">
+            <img src="{tracking_pixel_url}" alt="Fribl Logo" width="200" height="200" style="max-width:100%; height:auto;">
           </body>
         </html>
         """
         
+        print(f"HTML content for email {email_number} to {recipient_email}:")
+        print(html_content)
+
         # Prepare the email
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject

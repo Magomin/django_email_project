@@ -31,12 +31,15 @@ def track_open(request):
     print(f"Received track_open request with email_id: {email_id}, email_column: {email_column}")
 
     # Search for the record with the matching email_id
-    records = email_scheduler_table.all(formula=f"{{Validated Work Email}} = '{email_id}'")
+    formula = f"{{Validated Work Email}} = '{email_id}'"
+    print(f"Using formula: {formula}")
+    records = email_scheduler_table.all(formula=formula)
     if records:
         record_id = records[0]['id']
         print(f"Found record with id: {record_id}")
         # Update the specified email status to "opened"
-        email_scheduler_table.update(record_id, {email_column: "Opened"})
+        update_response = email_scheduler_table.update(record_id, {email_column: "Opened"})
+        print(f"Update response: {update_response}")
         print(f"Updated record {record_id} to 'Opened' in column {email_column}")
     else:
         print(f"Record not found for email_id: {email_id}")
@@ -57,8 +60,6 @@ def track_open(request):
     response['Expires'] = '0'
 
     return response
-
-
 def track_click(request):
     email_id = request.GET.get('email_id')
     email_column = request.GET.get('email_column')  # Specify which email status column to update
@@ -71,12 +72,15 @@ def track_click(request):
     print(f"Received track_click request with email_id: {email_id}, email_column: {email_column}, destination: {destination}")
 
     # Search for the record with the matching email_id in "Validated Work Email"
-    records = email_scheduler_table.all(formula=f"{{Validated Work Email}} = '{email_id}'")
+    formula = f"{{Validated Work Email}} = '{email_id}'"
+    print(f"Using formula: {formula}")
+    records = email_scheduler_table.all(formula=formula)
     if records:
         record_id = records[0]['id']
         print(f"Found record with id: {record_id}")
         # Update the specified email status to "Clicked"
-        email_scheduler_table.update(record_id, {email_column: "Clicked"})
+        update_response = email_scheduler_table.update(record_id, {email_column: "Clicked"})
+        print(f"Update response: {update_response}")
         print(f"Click event logged for {email_id} in column {email_column}.")
     else:
         print(f"Record not found for email_id: {email_id}.")
