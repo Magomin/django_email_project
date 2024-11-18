@@ -28,15 +28,23 @@ def track_open(request):
     if not email_id or not email_column:
         return HttpResponse("Missing parameters", status=400)
 
+    print(f"Received track_open request with email_id: {email_id}, email_column: {email_column}")
+
     # Search for the record with the matching email_id
     records = email_scheduler_table.all(formula=f"{{Validated Work Email}} = '{email_id}'")
     if records:
         record_id = records[0]['id']
         # Update the specified email status to "opened"
         email_scheduler_table.update(record_id, {email_column: "Opened"})
+        print(f"Updated record {record_id} to 'Opened' in column {email_column}")
+    else:
+        print(f"Record not found for email_id: {email_id}")
 
     # Load the Fribl logo to serve as the response
-    logo_path = finders.find('images/fribl_logo.png') # Adjust path as needed
+    logo_path = finders.find('images/fribl_logo.png')  # Adjust path as needed
+    if not logo_path:
+        return HttpResponse("Logo not found", status=404)
+
     with open(logo_path, 'rb') as logo_file:
         # Determine the MIME type of the image file
         mime_type, _ = mimetypes.guess_type(logo_path)
@@ -45,7 +53,7 @@ def track_open(request):
     # Set headers to make it cache-proof and ensure it's freshly loaded each time
     response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     response['Pragma'] = 'no-cache'
-    response['Expires'] = '0'ms
+    response['Expires'] = '0'
 
     return response
 
@@ -60,6 +68,8 @@ def track_click(request):
     # Check that all required parameters are present
     if not email_id or not email_column or not destination:
         return HttpResponse("Missing parameters", status=400)
+
+    print(f"Received track_click request with email_id: {email_id}, email_column: {email_column}, destination: {destination}")
 
     # Search for the record with the matching email_id in "Validated Work Email"
     records = email_scheduler_table.all(formula=f"{{Validated Work Email}} = '{email_id}'")
