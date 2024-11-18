@@ -84,4 +84,3 @@ def track_click(request):
 
     # Redirect to the destination URL
     return redirect(destination)
-s
