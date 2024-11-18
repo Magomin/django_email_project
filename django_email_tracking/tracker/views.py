@@ -21,7 +21,7 @@ def home(request):
 
 
 def track_open(request):
-    email_id = request.GET.get('email_id')
+    email_id = request.GET.get('email_id', '').strip()
     email_column = request.GET.get('email_column')
     
     if not email_id or not email_column:

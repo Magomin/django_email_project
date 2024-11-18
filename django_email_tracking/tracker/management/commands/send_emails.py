@@ -23,7 +23,7 @@ BASE_URL = os.getenv("BASE_URL") or "https://matthieu.dontpanic.link"  # Replace
 
 def generate_tracking_urls(email_number, recipient_email):
     """Generate tracking pixel and click tracking URLs for a specific email."""
-    encoded_email = quote(recipient_email)
+    encoded_email = quote(recipient_email.strip())
     encoded_column = quote(f"Email {email_number} status")
     
     tracking_pixel_url = f"{BASE_URL}/tracker/track_open/?email_id={encoded_email}&email_column={encoded_column}"
