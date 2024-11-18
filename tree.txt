@@ -1,0 +1,17 @@
+/django_email_project/
+├── django_email_tracking/
+│   ├── __init__.py
+│   ├── settings.py
+│   ├── urls.py
+│   ├── wsgi.py 
+│   └── tracking/
+│       ├── __init__.py
+│       ├── admin.py
+│       ├── apps.py
+│       ├── models.py
+│       ├── views.py
+│       └── migrations/
+│           ├── __init__.py
+├── manage.py
+├── requirements.txt
+└── Dockerfile

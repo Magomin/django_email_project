@@ -5,8 +5,8 @@ __pycache__/
 
 # Environment
 env/
-.env
-*.env
+ .env
+ *.env
 
 #python files that are not needed in the docker container
 linkedinscraperscript.py

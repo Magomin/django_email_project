@@ -10,7 +10,7 @@ services:
       - SECRET_KEY=${SECRET_KEY}
       - DEBUG=${DEBUG}
 
-  email_sender:
+  send_emails:
     build: .
     command: python manage.py send_emails
     volumes: 
