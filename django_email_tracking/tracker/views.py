@@ -28,7 +28,7 @@ def track_open(request):
         return HttpResponse("Missing parameters", status=400)
 
     # Search for the record with the matching email_id
-    records = email_scheduler_table.all(filter_by_formula=f"{{Validated Work Email}} = '{email_id}'")
+    records = email_scheduler_table.all(formula=f"{{Validated Work Email}} = '{email_id}'")
     if records:
         record_id = records[0]['id']
         # Update the specified email status to "opened"
