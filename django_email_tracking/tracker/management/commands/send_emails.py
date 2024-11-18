@@ -19,7 +19,7 @@ email_scheduler_table = api.table(BASE_ID, EMAIL_SCHEDULER_TABLE)
 
 
 # Placeholder for the server's base URL
-BASE_URL = os.getenv("BASE_URL") or ""  # Replace with the actual server URL when known
+BASE_URL = os.getenv("BASE_URL") or "https://matthieu.dontpanic.link"  # Replace with the actual server URL when known
 
 def generate_tracking_urls(email_number, recipient_email):
     """Generate tracking pixel and click tracking URLs for a specific email."""
