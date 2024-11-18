@@ -6,6 +6,7 @@ import os
 from .airtable_config import AIRTABLE_API_KEY, BASE_ID
 from pyairtable import Api
 import mimetypes
+from django.contrib.staticfiles import finders
 
 EMAIL_SCHEDULER_TABLE = "email_scheduler"
 
@@ -35,7 +36,7 @@ def track_open(request):
         email_scheduler_table.update(record_id, {email_column: "Opened"})
 
     # Load the Fribl logo to serve as the response
-    logo_path = os.path.join('static', 'images', 'fribl_logo.png')  # Adjust path as needed
+    logo_path = finders.find('images/fribl_logo.png') # Adjust path as needed
     with open(logo_path, 'rb') as logo_file:
         # Determine the MIME type of the image file
         mime_type, _ = mimetypes.guess_type(logo_path)
