@@ -100,7 +100,7 @@ class Command(BaseCommand):
         for email_number in [1, 2, 3]:
             formula = f"AND({{Send Date {email_number}}} = TODAY(), {{Email {email_number} status}} != 'Sent')"
 
-            records = email_scheduler_table.all(filter_by_formula=formula)
+            records = email_scheduler_table.all(formula=formula)
 
             print(f"Processing {len(records)} records for email number {email_number}.")
             for record in records:
