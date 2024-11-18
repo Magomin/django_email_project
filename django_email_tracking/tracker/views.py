@@ -34,6 +34,7 @@ def track_open(request):
     records = email_scheduler_table.all(formula=f"{{Validated Work Email}} = '{email_id}'")
     if records:
         record_id = records[0]['id']
+        print(f"Found record with id: {record_id}")
         # Update the specified email status to "opened"
         email_scheduler_table.update(record_id, {email_column: "Opened"})
         print(f"Updated record {record_id} to 'Opened' in column {email_column}")
@@ -58,8 +59,6 @@ def track_open(request):
     return response
 
 
-
-
 def track_click(request):
     email_id = request.GET.get('email_id')
     email_column = request.GET.get('email_column')  # Specify which email status column to update
@@ -75,12 +74,14 @@ def track_click(request):
     records = email_scheduler_table.all(formula=f"{{Validated Work Email}} = '{email_id}'")
     if records:
         record_id = records[0]['id']
+        print(f"Found record with id: {record_id}")
         # Update the specified email status to "Clicked"
         email_scheduler_table.update(record_id, {email_column: "Clicked"})
         print(f"Click event logged for {email_id} in column {email_column}.")
     else:
-        print(f"Record not found for {email_id}.")
+        print(f"Record not found for email_id: {email_id}.")
         return HttpResponse("Record not found", status=404)
 
     # Redirect to the destination URL
     return redirect(destination)
+s
