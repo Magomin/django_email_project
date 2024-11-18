@@ -5,22 +5,27 @@ services:
     volumes:
       - .:/app
     ports:
-      - "8000:8000"
+      - "80:8000"
     environment:
-      - POSTGRES_DB=django_db
-      - POSTGRES_USER=django_user
-      - POSTGRES_PASSWORD=django_password
-    depends_on:
-      - db
+      - SECRET_KEY=${SECRET_KEY}
+      - DEBUG=${DEBUG}
 
-  db:
-    image: postgres:13
+  email_sender:
+    build: .
+    command: python manage.py send_email
+    volumes: 
+      - .:/app
+    environment:
+      - SECRET_KEY=${SECRET_KEY}
+      - DEBUG=${DEBUG}
+  
+  schedule_emails:
+    build: .
+    command: python manage.py schedule_emails
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - .:/app
     environment:
-      - POSTGRES_DB=django_db
-      - POSTGRES_USER=django_user
-      - POSTGRES_PASSWORD=django_password
+      - SECRET_KEY=${SECRET_KEY}
+      - DEBUG=${DEBUG}
+  
 
-volumes:
-  postgres_data:
