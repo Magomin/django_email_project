@@ -57,7 +57,7 @@ def send_email_with_tracking(email_number, record):
           <body>
             <p>{email_content}</p>
             <p><a href="{click_tracking_url}">View more details at fribl.co</a></p>
-            <img src="{tracking_pixel_url}" alt="Fribl Logo" width="1" height="1" style="display:none;">
+             <img src="{tracking_pixel_url}" alt="Fribl Logo" width="200" height="200" style="max-width:100%; height:auto;">
           </body>
         </html>
         """
@@ -99,7 +99,8 @@ class Command(BaseCommand):
 
         for email_number in [1, 2, 3]:
             formula = f"AND({{Send Date {email_number}}} = TODAY(), {{Email {email_number} status}} != 'Sent')"
-            records = email_scheduler_table.all(formula=formula)
+
+            records = email_scheduler_table.all(filter_by_formula=formula)
 
             print(f"Processing {len(records)} records for email number {email_number}.")
             for record in records:
