@@ -26,8 +26,8 @@ def generate_tracking_urls(email_number, recipient_email):
     encoded_email = quote(recipient_email)
     encoded_column = quote(f"Email {email_number} status")
     
-    tracking_pixel_url = f"{BASE_URL}/tracking/track/?email_id={encoded_email}&email_column={encoded_column}"
-    click_tracking_url = f"{BASE_URL}/tracking/click/?email_id={encoded_email}&email_column={encoded_column}&destination={quote('https://fribl.co')}"
+    tracking_pixel_url = f"{BASE_URL}/tracking/track_open/?email_id={encoded_email}&email_column={encoded_column}"
+    click_tracking_url = f"{BASE_URL}/tracking/track_click/?email_id={encoded_email}&email_column={encoded_column}&destination={quote('https://fribl.co')}"
     
     return tracking_pixel_url, click_tracking_url
 
