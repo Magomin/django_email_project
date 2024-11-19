@@ -108,63 +108,28 @@ def track_open(request):
     # Always return the tracking pixel
     return HttpResponse(tracking_pixel, content_type='image/gif')
 
-@csrf_exempt
-@require_GET
 def track_click(request):
-    """Handle email link click tracking."""
-    try:
-        # Extract and validate parameters
-        email_id = request.GET.get('email_id')
-        email_column = request.GET.get('email_column')
-        destination = request.GET.get('destination', 'https://fribl.co')
+    email_id = request.GET.get('email_id')
+    email_column = request.GET.get('email_column')  # Specify which email status column to update
+    destination = request.GET.get('destination')  # Final URL to redirect to
 
-        if not email_id or not email_column:
-            logger.error("Missing required parameters: email_id or email_column")
-            return HttpResponseRedirect(unquote(destination))
+    # Check that all required parameters are present
+    if not email_id or not email_column or not destination:
+        return HttpResponse("Missing parameters", status=400)
 
-        email_id = unquote(email_id).strip().lower()
-        email_column = unquote(email_column).strip()
-        destination = unquote(destination).strip()
+    # Search for the record with the matching email_id in "Validated Work Email"
+    records = email_scheduler_table.all(formula=f"{{Validated Work Email}} = '{email_id}'")
+    if records:
+        record_id = records[0]['id']
+        # Update the specified email status to "Clicked"
+        email_scheduler_table.update(record_id, {email_column: "Clicked"})
+        print(f"Click event logged for {email_id} in column {email_column}.")
+    else:
+        print(f"Record not found for {email_id}.")
+        return HttpResponse("Record not found", status=404)
 
-        logger.info(f"Processing click tracking for email: {email_id}, column: {email_column}")
-
-        # Find the record using dynamic formula
-        formula = f"{{Validated Work Email}} = '{email_id}'"
-        records = email_scheduler_table.all(formula=formula)
-
-        if not records:
-            logger.warning(f"No record found for email: {email_id}")
-            return HttpResponseRedirect(destination)
-
-        # Fetch the first record
-        record = records[0]
-        validated_email = record['fields'].get('Validated Work Email')
-
-        # Log for debugging
-        logger.info(f"Record found: {record['id']} with Validated Work Email: {validated_email}")
-
-        # Check if the record has the expected email
-        if validated_email != email_id:
-            logger.warning(f"Mismatch between requested email_id ({email_id}) and Validated Work Email ({validated_email})")
-            return HttpResponseRedirect(destination)
-
-        # Process status update
-        record_id = record['id']
-        current_status = record['fields'].get(email_column, '')
-
-        logger.info(f"Current status for email {email_id}: {current_status}")
-
-        # Update status to 'Clicked' if current status is 'Sent' or 'Opened'
-        if current_status in ['Sent', 'Opened']:
-            if update_email_status(record_id, email_column, 'Clicked'):
-                logger.info(f"Successfully updated status to 'Clicked' for email {email_id}")
-            else:
-                logger.error(f"Failed to update status to 'Clicked' for email {email_id}")
-
-    except Exception as e:
-        logger.error(f"Error in track_click: {e}")
-
-    return HttpResponseRedirect(destination)
+    # Redirect to the destination URL
+    return redirect(destination)
 
 @require_GET
 def health_check(request):
@@ -176,3 +141,4 @@ def health_check(request):
     except Exception as e:
         logger.error(f"Health check failed: {e}")
         return HttpResponse("Tracking server error", status=500)
+    
