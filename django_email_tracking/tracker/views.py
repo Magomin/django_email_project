@@ -11,6 +11,7 @@ from django.views.decorators.http import require_GET
 from urllib.parse import unquote
 import base64
 import logging
+import mimetypes
 
 EMAIL_SCHEDULER_TABLE = "email_scheduler"
 api = Api(AIRTABLE_API_KEY)
@@ -52,52 +53,41 @@ def update_email_status(record_id, email_column, new_status, retries=3):
 @csrf_exempt
 @require_GET
 def track_open(request):
-    """Handle email open tracking with the company logo."""
+    email_id = request.GET.get('email_id', '').strip()
+    email_column = request.GET.get('email_column')
+
+    if not email_id or not email_column:
+        return HttpResponse("Missing parameters", status=400)
+
     try:
-        # Extract and validate parameters
-        email_id = request.GET.get('email_id')
-        email_column = request.GET.get('email_column')
+        # Query Airtable for the record by email_id
+        records = email_scheduler_table.all(
+            formula=f"{{Validated Work Email}} = '{email_id}'"
+        )
+        if not records:
+            return HttpResponse("Record not found", status=404)
 
-        if not email_id or not email_column:
-            logger.error("Missing parameters in track_open request.")
-            return HttpResponse("Missing parameters", status=400)
-
-        email_id = email_id.strip().lower()
-        email_column = email_column.strip()
-
-        logger.info(f"Processing open tracking for email: {email_id}, column: {email_column}")
-
-        # Search for the record
-        formula = f"{{Validated Work Email}} = '{email_id}'"
-        records = email_scheduler_table.all(formula=formula)
-
-        if records:
-            record = records[0]
-            record_id = record['id']
-            current_status = record['fields'].get(email_column, '')
-
-            logger.info(f"Record found: ID {record_id}, current status: {current_status}")
-
-            # Update status if it's "Sent"
-            if current_status == 'Sent':
-                email_scheduler_table.update(record_id, {email_column: "Opened"})
-                logger.info(f"Status updated to 'Opened' for email: {email_id}")
-            else:
-                logger.info(f"No update needed. Current status: {current_status}")
-        else:
-            logger.warning(f"No record found for email: {email_id}")
-
+        # Update the specified column in Airtable
+        record_id = records[0]['id']
+        email_scheduler_table.update(record_id, {email_column: "Opened"})
     except Exception as e:
-        logger.error(f"Error in track_open: {e}")
+        return HttpResponse(f"Error updating Airtable: {e}", status=500)
 
-    # Serve the company logo
-    logo_path = finders.find('images/logo.png')
+    # Serve the logo as the tracking pixel
+    logo_path = finders.find('images/fribl_logo.png')  # Adjust path if needed
     if not logo_path:
-        logger.error("Company logo not found")
-        return HttpResponse("Company logo not found", status=404)
-    
-    return FileResponse(open(logo_path, 'rb'), content_type='image/png')
+        return HttpResponse("Logo not found", status=404)
 
+    with open(logo_path, 'rb') as logo_file:
+        mime_type, _ = mimetypes.guess_type(logo_path)
+        response = HttpResponse(logo_file.read(), content_type=mime_type)
+
+    # Set headers to make the image cache-proof
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+
+    return response
 
 
 
