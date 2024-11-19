@@ -74,6 +74,7 @@ def track_open(request):
         print(f"Record not found for email_id: {email_id}")
 
     # Load the Fribl logo to serve as the response
+
     logo_path = finders.find('images/fribl_logo.png')  # Adjust path as needed
     if not logo_path:
         return HttpResponse("Logo not found", status=404)
@@ -82,6 +83,7 @@ def track_open(request):
         # Determine the MIME type of the image file
         mime_type, _ = mimetypes.guess_type(logo_path)
         response = HttpResponse(logo_file.read(), content_type=mime_type)
+        
     
     # Set headers to make it cache-proof and ensure it's freshly loaded each time
     response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
