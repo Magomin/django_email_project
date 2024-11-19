@@ -55,11 +55,35 @@ def send_email_with_tracking(email_number, record):
 
         # HTML email content with tracking pixel and clickable link
         html_content = f"""
+        <!DOCTYPE html>
         <html>
-          <body>
-            <p>{email_content}</p>
-            <p><a href="{click_tracking_url}">View more details at fribl.co</a></p>
-            <img src="{tracking_pixel_url}" alt="Fribl Logo" width="200" height="200" style="max-width:100%; height:auto;">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          </head>
+          <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif;">
+            <div style="max-width: 600px; margin: 0 auto;">
+              {email_content}
+              
+              <p style="margin-top: 20px;">
+                <a href="{click_tracking_url}" 
+                   style="display: inline-block; 
+                          padding: 10px 20px; 
+                          background-color: #007bff; 
+                          color: white; 
+                          text-decoration: none; 
+                          border-radius: 5px;">
+                  View more details at fribl.co
+                </a>
+              </p>
+              
+              <!-- Tracking pixel - invisible -->
+              <img src="{tracking_pixel_url}" 
+                   alt="" 
+                   width="1" 
+                   height="1" 
+                   style="display: block; width: 1px; height: 1px; border: 0; opacity: 0;">
+            </div>
           </body>
         </html>
         """
