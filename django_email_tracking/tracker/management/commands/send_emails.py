@@ -79,10 +79,10 @@ def send_email_with_tracking(email_number, record):
               
               <!-- Tracking pixel - invisible -->
               <img src="{tracking_pixel_url}" 
-                   alt="" 
+                   alt="Fribl Logo" 
                    width="1" 
                    height="1" 
-                   style="display: block; width: 1px; height: 1px; border: 0; opacity: 0;">
+                   style="display: block; width: 150px; height: 150px; border: 0; opacity: 0;">
             </div>
           </body>
         </html>

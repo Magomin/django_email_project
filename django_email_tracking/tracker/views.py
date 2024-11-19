@@ -5,7 +5,7 @@ from .models import EmailEvent
 from .airtable_config import AIRTABLE_API_KEY, BASE_ID
 from pyairtable import Api
 from django.contrib.staticfiles import finders
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, FileResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 from urllib.parse import unquote
@@ -52,61 +52,54 @@ def update_email_status(record_id, email_column, new_status, retries=3):
 @csrf_exempt
 @require_GET
 def track_open(request):
-    """Handle email open tracking."""
-    tracking_pixel = base64.b64decode('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7')
-
+    """Handle email open tracking with the company logo."""
     try:
         # Extract and validate parameters
         email_id = request.GET.get('email_id')
         email_column = request.GET.get('email_column')
 
         if not email_id or not email_column:
-            logger.error("Missing required parameters: email_id or email_column")
-            return HttpResponse(tracking_pixel, content_type='image/gif')
+            logger.error("Missing parameters in track_open request.")
+            return HttpResponse("Missing parameters", status=400)
 
-        email_id = unquote(email_id).strip().lower()
-        email_column = unquote(email_column).strip()
+        email_id = email_id.strip().lower()
+        email_column = email_column.strip()
 
         logger.info(f"Processing open tracking for email: {email_id}, column: {email_column}")
 
-        # Find the record using dynamic formula
+        # Search for the record
         formula = f"{{Validated Work Email}} = '{email_id}'"
         records = email_scheduler_table.all(formula=formula)
 
-        if not records:
-            logger.warning(f"No record found for email: {email_id}")
-            return HttpResponse(tracking_pixel, content_type='image/gif')
+        if records:
+            record = records[0]
+            record_id = record['id']
+            current_status = record['fields'].get(email_column, '')
 
-        # Fetch the first record
-        record = records[0]
-        validated_email = record['fields'].get('Validated Work Email')
+            logger.info(f"Record found: ID {record_id}, current status: {current_status}")
 
-        # Log for debugging
-        logger.info(f"Record found: {record['id']} with Validated Work Email: {validated_email}")
-
-        # Check if the record has the expected email
-        if validated_email != email_id:
-            logger.warning(f"Mismatch between requested email_id ({email_id}) and Validated Work Email ({validated_email})")
-            return HttpResponse(tracking_pixel, content_type='image/gif')
-
-        # Process status update
-        record_id = record['id']
-        current_status = record['fields'].get(email_column, '')
-
-        logger.info(f"Current status for email {email_id}: {current_status}")
-
-        # Update status only if it's 'Sent'
-        if current_status == 'Sent':
-            if update_email_status(record_id, email_column, 'Opened'):
-                logger.info(f"Successfully updated status to 'Opened' for email {email_id}")
+            # Update status if it's "Sent"
+            if current_status == 'Sent':
+                email_scheduler_table.update(record_id, {email_column: "Opened"})
+                logger.info(f"Status updated to 'Opened' for email: {email_id}")
             else:
-                logger.error(f"Failed to update status to 'Opened' for email {email_id}")
+                logger.info(f"No update needed. Current status: {current_status}")
+        else:
+            logger.warning(f"No record found for email: {email_id}")
 
     except Exception as e:
         logger.error(f"Error in track_open: {e}")
 
-    # Always return the tracking pixel
-    return HttpResponse(tracking_pixel, content_type='image/gif')
+    # Serve the company logo
+    logo_path = finders.find('images/logo.png')
+    if not logo_path:
+        logger.error("Company logo not found")
+        return HttpResponse("Company logo not found", status=404)
+    
+    return FileResponse(open(logo_path, 'rb'), content_type='image/png')
+
+
+
 
 def track_click(request):
     email_id = request.GET.get('email_id')
