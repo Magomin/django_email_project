@@ -50,46 +50,45 @@ def update_email_status(record_id, email_column, new_status, retries=3):
             if attempt == retries - 1:
                 return False
 
-@csrf_exempt
-@require_GET
 def track_open(request):
     email_id = request.GET.get('email_id', '').strip()
     email_column = request.GET.get('email_column')
-
+    
     if not email_id or not email_column:
         return HttpResponse("Missing parameters", status=400)
 
-    try:
-        # Query Airtable for the record by email_id
-        records = email_scheduler_table.all(
-            formula=f"{{Validated Work Email}} = '{email_id}'"
-        )
-        if not records:
-            return HttpResponse("Record not found", status=404)
+    print(f"Received track_open request with email_id: {email_id}, email_column: {email_column}")
 
-        # Update the specified column in Airtable
+    # Search for the record with the matching email_id
+    formula = f"{{Validated Work Email}} = '{email_id}'"
+    print(f"Using formula: {formula}")
+    records = email_scheduler_table.all(formula=formula)
+    if records:
         record_id = records[0]['id']
-        email_scheduler_table.update(record_id, {email_column: "Opened"})
-    except Exception as e:
-        return HttpResponse(f"Error updating Airtable: {e}", status=500)
+        print(f"Found record with id: {record_id}")
+        # Update the specified email status to "opened"
+        update_response = email_scheduler_table.update(record_id, {email_column: "Opened"})
+        print(f"Update response: {update_response}")
+        print(f"Updated record {record_id} to 'Opened' in column {email_column}")
+    else:
+        print(f"Record not found for email_id: {email_id}")
 
-    # Serve the logo as the tracking pixel
-    logo_path = finders.find('images/fribl_logo.png')  # Adjust path if needed
+    # Load the Fribl logo to serve as the response
+    logo_path = finders.find('images/fribl_logo.png')  # Adjust path as needed
     if not logo_path:
         return HttpResponse("Logo not found", status=404)
 
     with open(logo_path, 'rb') as logo_file:
+        # Determine the MIME type of the image file
         mime_type, _ = mimetypes.guess_type(logo_path)
         response = HttpResponse(logo_file.read(), content_type=mime_type)
-
-    # Set headers to make the image cache-proof
+    
+    # Set headers to make it cache-proof and ensure it's freshly loaded each time
     response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     response['Pragma'] = 'no-cache'
     response['Expires'] = '0'
 
     return response
-
-
 
 def track_click(request):
     email_id = request.GET.get('email_id')
