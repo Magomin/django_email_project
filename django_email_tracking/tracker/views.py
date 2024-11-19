@@ -111,54 +111,6 @@ def track_open(request):
 @csrf_exempt
 @require_GET
 def track_click(request):
-    """Handle email link click tracking"""
-    try:
-        # Get and validate parameters
-        email_id = request.GET.get('email_id')
-        email_column = request.GET.get('email_column')
-        destination = request.GET.get('destination', 'https://fribl.co')  # Default fallback
-        
-        if not all([email_id, email_column]):
-            logger.error("Missing required parameters")
-            return HttpResponseRedirect(unquote(destination))
-        
-        # Decode parameters
-        email_id = unquote(email_id)
-        email_column = unquote(email_column)
-        destination = unquote(destination)
-        
-        logger.info(f"Processing click tracking for {email_id} in column {email_column}")
-        
-        # Find the record
-        record = get_record_by_email(email_id)
-        if not record:
-            logger.warning(f"No record found for email: {email_id}")
-            return HttpResponseRedirect(destination)
-        
-        current_status = record['fields'].get(email_column, '')
-        logger.info(f"Current status for {email_id}: {current_status}")
-        
-        # Update status to 'Clicked' if current status is 'Sent' or 'Opened'
-        if current_status in ['Sent', 'Opened']:
-            success = update_email_status(record['id'], email_column, 'Clicked')
-            if success:
-                logger.info(f"Successfully updated {email_id} status to Clicked")
-            else:
-                logger.error(f"Failed to update {email_id} status to Clicked after all retries")
-        
-    except Exception as e:
-        logger.error(f"Error in track_click: {e}")
-    
-    # Always redirect to destination
-    try:
-        return HttpResponseRedirect(destination)
-    except:
-        return HttpResponseRedirect('https://fribl.co')
-
-# Add these to check if the tracking endpoints are alive
-@csrf_exempt
-@require_GET
-def track_click(request):
     """Handle email link click tracking."""
     try:
         # Extract and validate parameters
@@ -213,3 +165,14 @@ def track_click(request):
         logger.error(f"Error in track_click: {e}")
 
     return HttpResponseRedirect(destination)
+
+@require_GET
+def health_check(request):
+    """Simple endpoint to verify the tracking server is running"""
+    try:
+        # Try to connect to Airtable
+        email_scheduler_table.all(max_records=1)
+        return HttpResponse("Tracking server is healthy", status=200)
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        return HttpResponse("Tracking server error", status=500)
