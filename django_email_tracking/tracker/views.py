@@ -5,14 +5,14 @@ from .models import EmailEvent
 import os
 from .airtable_config import AIRTABLE_API_KEY, BASE_ID
 from pyairtable import Api
-import mimetypes
 from django.contrib.staticfiles import finders
+from django.http import HttpResponse, HttpResponseRedirect
+from django.views.decorators.csrf import csrf_exempt
+from urllib.parse import unquote
+import base64
 
 EMAIL_SCHEDULER_TABLE = "email_scheduler"
-
-
 api = Api(AIRTABLE_API_KEY)
-
 email_scheduler_table = api.table(BASE_ID, EMAIL_SCHEDULER_TABLE)
 
 # tracking/views.py
@@ -20,71 +20,88 @@ email_scheduler_table = api.table(BASE_ID, EMAIL_SCHEDULER_TABLE)
 def home(request):
      return HttpResponse("Welcome to the Email Tracking App!")
 
-
+@csrf_exempt
 def track_open(request):
-    email_id = request.GET.get('email_id', '').strip()
-    email_column = request.GET.get('email_column')
-    
-    if not email_id or not email_column:
-        return HttpResponse("Missing parameters", status=400)
+    """Handle email open tracking"""
+    try:
+        # Get parameters from the request
+        email_id = request.GET.get('email_id')
+        email_column = request.GET.get('email_column')
+        
+        if not email_id or not email_column:
+            return HttpResponse(status=400)
+            
+        # Decode the URL-encoded parameters
+        email_id = unquote(email_id)
+        email_column = unquote(email_column)
+        
+        # Find the record in Airtable
+        formula = f"{{Validated Work Email}} = '{email_id}'"
+        records = email_scheduler_table.all(formula=formula)
+        
+        if records:
+            record = records[0]
+            current_status = record['fields'].get(email_column, '')
+            
+            # Update the status to include "Opened" if not already present
+            new_status = 'Opened'
+            if current_status and current_status != 'Opened':
+                new_status = f"{current_status}, Opened"
+                
+            email_scheduler_table.update(record['id'], {
+                email_column: new_status
+            })
+            
+        # Return a 1x1 transparent GIF
+        return HttpResponse(
+            base64.b64decode('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'),
+            content_type='image/gif'
+        )
+        
+    except Exception as e:
+        print(f"Error tracking email open: {e}")
+        return HttpResponse(status=500)
 
-    print(f"Received track_open request with email_id: {email_id}, email_column: {email_column}")
-
-    # Search for the record with the matching email_id
-    formula = f"{{Validated Work Email}} = '{email_id}'"
-    print(f"Using formula: {formula}")
-    records = email_scheduler_table.all(formula=formula)
-    if records:
-        record_id = records[0]['id']
-        print(f"Found record with id: {record_id}")
-        # Update the specified email status to "opened"
-        update_response = email_scheduler_table.update(record_id, {email_column: "Opened"})
-        print(f"Update response: {update_response}")
-        print(f"Updated record {record_id} to 'Opened' in column {email_column}")
-    else:
-        print(f"Record not found for email_id: {email_id}")
-
-    # Load the Fribl logo to serve as the response
-    logo_path = finders.find('images/fribl_logo.png')  # Adjust path as needed
-    if not logo_path:
-        return HttpResponse("Logo not found", status=404)
-
-    with open(logo_path, 'rb') as logo_file:
-        # Determine the MIME type of the image file
-        mime_type, _ = mimetypes.guess_type(logo_path)
-        response = HttpResponse(logo_file.read(), content_type=mime_type)
-    
-    # Set headers to make it cache-proof and ensure it's freshly loaded each time
-    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-    response['Pragma'] = 'no-cache'
-    response['Expires'] = '0'
-
-    return response
+@csrf_exempt
 def track_click(request):
-    email_id = request.GET.get('email_id')
-    email_column = request.GET.get('email_column')  # Specify which email status column to update
-    destination = request.GET.get('destination')  # Final URL to redirect to
-
-    # Check that all required parameters are present
-    if not email_id or not email_column or not destination:
-        return HttpResponse("Missing parameters", status=400)
-
-    print(f"Received track_click request with email_id: {email_id}, email_column: {email_column}, destination: {destination}")
-
-    # Search for the record with the matching email_id in "Validated Work Email"
-    formula = f"{{Validated Work Email}} = '{email_id}'"
-    print(f"Using formula: {formula}")
-    records = email_scheduler_table.all(formula=formula)
-    if records:
-        record_id = records[0]['id']
-        print(f"Found record with id: {record_id}")
-        # Update the specified email status to "Clicked"
-        update_response = email_scheduler_table.update(record_id, {email_column: "Clicked"})
-        print(f"Update response: {update_response}")
-        print(f"Click event logged for {email_id} in column {email_column}.")
-    else:
-        print(f"Record not found for email_id: {email_id}.")
-        return HttpResponse("Record not found", status=404)
-
-    # Redirect to the destination URL
-    return redirect(destination)
+    """Handle email link click tracking"""
+    try:
+        # Get parameters from the request
+        email_id = request.GET.get('email_id')
+        email_column = request.GET.get('email_column')
+        destination = request.GET.get('destination')
+        
+        if not all([email_id, email_column, destination]):
+            return HttpResponse(status=400)
+            
+        # Decode the URL-encoded parameters
+        email_id = unquote(email_id)
+        email_column = unquote(email_column)
+        destination = unquote(destination)
+        
+        # Find the record in Airtable
+        formula = f"{{Validated Work Email}} = '{email_id}'"
+        records = email_scheduler_table.all(formula=formula)
+        
+        if records:
+            record = records[0]
+            current_status = record['fields'].get(email_column, '')
+            
+            # Update the status to include "Clicked" if not already present
+            new_status = 'Clicked'
+            if current_status:
+                if 'Clicked' not in current_status:
+                    new_status = f"{current_status}, Clicked"
+                else:
+                    new_status = current_status
+                    
+            email_scheduler_table.update(record['id'], {
+                email_column: new_status
+            })
+        
+        # Redirect to the destination URL
+        return HttpResponseRedirect(destination)
+        
+    except Exception as e:
+        print(f"Error tracking email click: {e}")
+        return HttpResponse(status=500)
