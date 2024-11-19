@@ -22,7 +22,7 @@ def home(request):
 
 @csrf_exempt
 def track_open(request):
-    """Handle email open tracking"""
+    """Handle email open tracking - updates status to 'Opened'"""
     try:
         # Get parameters from the request
         email_id = request.GET.get('email_id')
@@ -43,14 +43,11 @@ def track_open(request):
             record = records[0]
             current_status = record['fields'].get(email_column, '')
             
-            # Update the status to include "Opened" if not already present
-            new_status = 'Opened'
-            if current_status and current_status != 'Opened':
-                new_status = f"{current_status}, Opened"
-                
-            email_scheduler_table.update(record['id'], {
-                email_column: new_status
-            })
+            # Only update to 'Opened' if current status is 'Sent'
+            if current_status == 'Sent':
+                email_scheduler_table.update(record['id'], {
+                    email_column: 'Opened'
+                })
             
         # Return a 1x1 transparent GIF
         return HttpResponse(
@@ -64,7 +61,7 @@ def track_open(request):
 
 @csrf_exempt
 def track_click(request):
-    """Handle email link click tracking"""
+    """Handle email link click tracking - updates status to 'Clicked'"""
     try:
         # Get parameters from the request
         email_id = request.GET.get('email_id')
@@ -87,17 +84,11 @@ def track_click(request):
             record = records[0]
             current_status = record['fields'].get(email_column, '')
             
-            # Update the status to include "Clicked" if not already present
-            new_status = 'Clicked'
-            if current_status:
-                if 'Clicked' not in current_status:
-                    new_status = f"{current_status}, Clicked"
-                else:
-                    new_status = current_status
-                    
-            email_scheduler_table.update(record['id'], {
-                email_column: new_status
-            })
+            # Update to 'Clicked' if current status is either 'Sent' or 'Opened'
+            if current_status in ['Sent', 'Opened']:
+                email_scheduler_table.update(record['id'], {
+                    email_column: 'Clicked'
+                })
         
         # Redirect to the destination URL
         return HttpResponseRedirect(destination)
